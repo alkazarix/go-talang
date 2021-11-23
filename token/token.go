@@ -1,10 +1,16 @@
 package token
 
-type TokenType string
+type Type string
+
+type Position struct {
+	Line   int
+	Column int
+}
 
 type Token struct {
-	Type    TokenType
-	Literal string
+	Type     Type
+	Literal  string
+	Position Position
 }
 
 const (
@@ -60,7 +66,7 @@ const (
 	Print    = "Print"
 )
 
-var keywords = map[string]TokenType{
+var keywords = map[string]Type{
 	"class":  Class,
 	"this":   This,
 	"super":  Super,
@@ -78,7 +84,7 @@ var keywords = map[string]TokenType{
 	"and":    And,
 }
 
-func LookupIdentifier(identifier string) TokenType {
+func LookupIdentifier(identifier string) Type {
 	if tok, ok := keywords[identifier]; ok {
 		return tok
 	}

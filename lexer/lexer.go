@@ -26,17 +26,25 @@ func New(input string) *Lexer {
 	return l
 }
 
-func (l *Lexer) NextToken() token.Token {
+func (l *Lexer) Lexeme() []token.Token {
+	tokens := []token.Token{}
+	for !l.isAtEnd() {
+		tokens = append(tokens, l.NextToken())
+	}
+	tokens = append(tokens, l.makeToken(token.EOF, ""))
+	return tokens
+}
+
+func (l *Lexer) NextToken() (tok token.Token) {
 
 	l.skipWhitespaces()
 
-	var tok token.Token
 	switch l.ch {
 	case '!':
 		if l.match('=') {
 			tok = l.makeToken(token.NotEqual, "!=")
 		} else {
-			tok = l.makeToken(token.Bang, string(l.ch))
+			tok = l.makeToken(token.Bang, "!")
 		}
 	case '<':
 		if l.match('=') {
@@ -46,7 +54,7 @@ func (l *Lexer) NextToken() token.Token {
 		}
 	case '>':
 		if l.match('=') {
-			tok = l.makeToken(token.GreaterThanEqual, string(l.ch))
+			tok = l.makeToken(token.GreaterThanEqual, ">=")
 		} else {
 			tok = l.makeToken(token.GreaterThan, string(l.ch))
 		}
@@ -96,6 +104,7 @@ func (l *Lexer) NextToken() token.Token {
 		if unicode.IsLetter(l.ch) {
 			literal := l.readIdentifier()
 			tok = l.makeToken(token.LookupIdentifier(literal), literal)
+			return
 		} else if unicode.IsNumber(l.ch) {
 			literal, err := l.readNumber()
 			if err != nil {
@@ -103,6 +112,7 @@ func (l *Lexer) NextToken() token.Token {
 			} else {
 				tok = l.makeToken(token.Number, literal)
 			}
+			return
 		} else {
 			tok = l.makeToken(token.Illegal, fmt.Sprintf("unknown token: %s", string(l.ch)))
 		}
@@ -110,13 +120,14 @@ func (l *Lexer) NextToken() token.Token {
 	}
 
 	l.consume()
-	return tok
+	return
 }
 
 func (l *Lexer) consume() {
 	if l.isAtEnd() {
 		return
 	}
+
 	ch := l.s.Next()
 	if ch == scanner.EOF {
 		l.ch = eof
@@ -141,8 +152,8 @@ func (l *Lexer) skipWhitespaces() {
 }
 
 func (l *Lexer) match(ch rune) bool {
-	l.consume()
-	if l.isAtEnd() || l.ch != ch {
+	peek := l.peek()
+	if l.isAtEnd() || peek != ch {
 		return false
 	}
 	l.consume()
@@ -203,10 +214,11 @@ func (l *Lexer) readIdentifier() string {
 	return strBuilder.String()
 }
 
-func (l *Lexer) makeToken(ttype token.TokenType, literal string) token.Token {
+func (l *Lexer) makeToken(ttype token.Type, literal string) token.Token {
 	return token.Token{
-		Type:    ttype,
-		Literal: literal,
+		Type:     ttype,
+		Literal:  literal,
+		Position: token.Position{Line: l.s.Line, Column: l.s.Column},
 	}
 }
 

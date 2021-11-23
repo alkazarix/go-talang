@@ -16,7 +16,7 @@ func TestSimpleToken(t *testing.T) {
 < <=`
 	l := New(input)
 	tests := []struct {
-		expectTok     token.TokenType
+		expectTok     token.Type
 		expectLiteral string
 	}{
 		{token.LeftParen, "("},
@@ -46,13 +46,13 @@ func TestSimpleToken(t *testing.T) {
 	for i, test := range tests {
 		tok := l.NextToken()
 		if test.expectTok != tok.Type {
-			t.Fatalf("test [%d]: expected token is %s. got %s", i, test.expectTok, tok)
+			t.Fatalf("test [%d]: expected token is %s. got %s", i, test.expectTok, tok.Type)
 		}
 	}
 
 	tok := l.NextToken()
 	if token.EOF != tok.Type {
-		t.Fatalf("expected token is EOF. got %s", tok)
+		t.Fatalf("expected token is EOF. got %s", tok.Type)
 	}
 }
 
@@ -64,7 +64,7 @@ if 			nil 		or 			print     return
 super 	this 		true		let       while
 `
 	tests := []struct {
-		expectTok     token.TokenType
+		expectTok     token.Type
 		expectLiteral string
 	}{
 		{token.Identifier, "abc"},
@@ -146,7 +146,7 @@ func TestString(t *testing.T) {
 		tok := l.NextToken()
 
 		if tok.Type != token.String {
-			t.Fatalf("expected token is string. got %s", tok)
+			t.Fatalf("expected token is string. got %s", tok.Type)
 		}
 
 		if tok.Literal != expected {
