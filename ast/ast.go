@@ -132,6 +132,82 @@ func (e *AssignExpr) String() string {
 	return fmt.Sprintf("%s = %s", e.Name, e.Value)
 }
 
+/*
+export type GetExpr = { type: "GetExpr"; name: Token; object: Expr }
+export type SetExpr = { type: "SetExpr"; object: Expr; name: Token; value: Expr }
+export type ThisExpr = { type: "ThisExpr"; keyword: Token }
+export type SuperExpr = { type: "SuperExpr"; keyword: Token; method: Token }
+*/
+// getter expression
+type GetExpr struct {
+	Name token.Token
+	Obj  Expr
+}
+
+func (*GetExpr) node() {}
+func (*GetExpr) expr() {}
+
+func (e *GetExpr) String() string {
+	return fmt.Sprintf("%s.%s", e.Name.Literal, e.Obj.String())
+}
+
+// setter expression
+type SetExpr struct {
+	Name  token.Token
+	Obj   Expr
+	Value Expr
+}
+
+func (*SetExpr) node() {}
+func (*SetExpr) expr() {}
+
+func (e *SetExpr) String() string {
+	return fmt.Sprintf("%s.%s = %s", e.Name.Literal, e.Obj.String(), e.Value.String())
+}
+
+// this expression
+type ThisExpr struct {
+	Keyword token.Token
+}
+
+func (*ThisExpr) node() {}
+func (*ThisExpr) expr() {}
+
+func (e *ThisExpr) String() string {
+	return fmt.Sprintf("this")
+}
+
+// super expression
+type SuperExpr struct {
+	Keyword token.Token
+	Method  token.Token
+}
+
+func (*SuperExpr) node() {}
+func (*SuperExpr) expr() {}
+
+func (e *SuperExpr) String() string {
+	return fmt.Sprintf("super")
+}
+
+// call expression
+
+type CallExpr struct {
+	Callee    Expr
+	Arguments []Expr
+}
+
+func (*CallExpr) node() {}
+func (*CallExpr) expr() {}
+
+func (e *CallExpr) String() string {
+	args := make([]string, len(e.Arguments))
+	for i, arg := range e.Arguments {
+		args[i] = arg.String()
+	}
+	return fmt.Sprintf("%s(%s)", e.Callee, strings.Join(args, ", "))
+}
+
 // print statement
 type PrintStmt struct {
 	Expression Expr
@@ -236,4 +312,67 @@ func (s *WhileStmt) String() string {
 	sb.WriteString(") ")
 	sb.WriteString(s.Body.String())
 	return sb.String()
+}
+
+// function statement
+type FunctionStmt struct {
+	Name          string
+	Params        []*Ident
+	Body          []Stmt
+	IsInitializer bool
+}
+
+func (*FunctionStmt) node() {}
+func (*FunctionStmt) stmt() {}
+
+func (s *FunctionStmt) String() string {
+	var sb strings.Builder
+	sb.WriteString("fn ")
+	sb.WriteString(s.Name)
+	sb.WriteString("(")
+	params := make([]string, len(s.Params))
+	for i, p := range s.Params {
+		params[i] = p.Name
+	}
+	sb.WriteString(strings.Join(params, ", "))
+	sb.WriteString(") { ")
+	for _, stmt := range s.Body {
+		sb.WriteString(stmt.String())
+	}
+	sb.WriteString(" }")
+	return sb.String()
+}
+
+// return statement
+type ReturnStmt struct {
+	Keyword token.Token
+	Value   Expr
+}
+
+func (*ReturnStmt) node() {}
+func (*ReturnStmt) stmt() {}
+
+func (s *ReturnStmt) String() string {
+	var sb strings.Builder
+	sb.WriteString("return ")
+	if s.Value != nil {
+		sb.WriteString(s.Value.String())
+	}
+	sb.WriteRune(';')
+	return sb.String()
+}
+
+// class statement
+
+type ClassStmt struct {
+	Name       string
+	SuperClass VariableExpr
+	Methods    []*FunctionStmt
+}
+
+func (*ClassStmt) node() {}
+func (*ClassStmt) stmt() {}
+
+func (s *ClassStmt) String() string {
+	return "class " + s.Name
 }

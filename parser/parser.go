@@ -45,6 +45,12 @@ func (p *Parser) declaration() ast.Stmt {
 	if p.match(token.Let) {
 		return p.varDeclaration()
 	}
+	if p.match(token.Function) {
+		return p.functionDeclaration()
+	}
+	if p.match(token.Class) {
+		return p.classDeclaration()
+	}
 	return p.statement()
 }
 
@@ -58,6 +64,66 @@ func (p *Parser) varDeclaration() ast.Stmt {
 	}
 	p.expect(token.Semicolon, "expected `semicolon` after a expression")
 	return &ast.VariableStmt{Ident: indent, Initializer: expr}
+}
+
+func (p *Parser) functionDeclaration() *ast.FunctionStmt {
+	p.expect(token.Identifier, "expected function name")
+	name := p.previous()
+	p.expect(token.LeftParen, "expected '(' after function name.")
+	fun := &ast.FunctionStmt{
+		Name:   name.Literal,
+		Params: make([]*ast.Ident, 0),
+		Body:   make([]ast.Stmt, 0),
+	}
+	if !p.match(token.RightParen) {
+		for {
+
+			p.expect(token.Identifier, "Expect parameter name.")
+			parameter := p.previous()
+			if len(fun.Params) >= 255 {
+				p.error("Cannot have more than 255 parameters.")
+			}
+			ident := &ast.Ident{Name: parameter.Literal}
+			fun.Params = append(fun.Params, ident)
+			if !p.match(token.Comma) {
+				break
+			}
+		}
+		p.expect(token.RightParen, "Expect ')' after parameters.")
+	}
+	p.expect(token.LeftBrace, "Expect '{' before function body.")
+	fun.Body = p.blockStatement().Statements
+	return fun
+}
+
+func (p *Parser) classDeclaration() ast.Stmt {
+	p.expect(token.Identifier, "expected class name after `class`")
+	name := p.previous()
+
+	var superclass ast.VariableExpr
+	if p.match(token.LessThan) {
+		p.expect(token.Identifier, "expected superclass name.")
+		superclass = ast.VariableExpr{
+			Name: p.previous().Literal,
+		}
+	}
+
+	p.expect(token.LeftBrace, "expected '{' after class name.")
+
+	methods := make([]*ast.FunctionStmt, 0)
+	for p.check(token.Identifier) {
+		method := p.functionDeclaration()
+		method.IsInitializer = method.Name == "init"
+		methods = append(methods, method)
+	}
+
+	p.expect(token.RightBrace, "Expect '}' after class block.")
+
+	return &ast.ClassStmt{
+		Name:       name.Literal,
+		Methods:    methods,
+		SuperClass: superclass,
+	}
 }
 
 func (p *Parser) statement() ast.Stmt {
@@ -75,6 +141,10 @@ func (p *Parser) statement() ast.Stmt {
 	if p.match(token.While) {
 		return p.whileStatement()
 	}
+
+	if p.match(token.Return) {
+		return p.returnStatement()
+	}
 	return p.expressionStatement()
 }
 
@@ -84,7 +154,7 @@ func (p *Parser) printStatement() ast.Stmt {
 	return &ast.PrintStmt{Expression: expr}
 }
 
-func (p *Parser) blockStatement() ast.Stmt {
+func (p *Parser) blockStatement() *ast.BlockStmt {
 	statements := make([]ast.Stmt, 0)
 	for !(p.check(token.RightBrace) || p.isAtEnd()) {
 		statements = append(statements, p.declaration())
@@ -116,6 +186,15 @@ func (p *Parser) whileStatement() ast.Stmt {
 	return &ast.WhileStmt{Condition: expr, Body: body}
 }
 
+func (p *Parser) returnStatement() ast.Stmt {
+	stmt := &ast.ReturnStmt{}
+	if !p.match(token.Semicolon) {
+		stmt.Value = p.expression()
+		p.expect(token.Semicolon, "expected ';' after return value.")
+	}
+	return stmt
+}
+
 func (p *Parser) expressionStatement() ast.Stmt {
 	expr := p.expression()
 	p.expect(token.Semicolon, "expected ';' after value.")
@@ -133,6 +212,12 @@ func (p *Parser) assignement() ast.Expr {
 		switch e := expr.(type) {
 		case *ast.VariableExpr:
 			return &ast.AssignExpr{
+				Name:  e.Name,
+				Value: value,
+			}
+		case *ast.GetExpr:
+			return &ast.SetExpr{
+				Obj:   e.Obj,
 				Name:  e.Name,
 				Value: value,
 			}
@@ -229,7 +314,44 @@ func (p *Parser) unary() ast.Expr {
 			Right:    right,
 		}
 	}
-	return p.primary()
+	return p.call()
+}
+
+func (p *Parser) call() ast.Expr {
+	expr := p.primary()
+	for {
+		if p.match(token.LeftParen) {
+			expr = p.finishCall(expr)
+		} else if p.match(token.Dot) {
+			p.expect(token.Identifier, "expected property name after `.`")
+			expr = &ast.GetExpr{Obj: expr, Name: p.previous()}
+		} else {
+			break
+		}
+	}
+	return expr
+}
+
+func (p *Parser) finishCall(expr ast.Expr) ast.Expr {
+	call := &ast.CallExpr{
+		Callee:    expr,
+		Arguments: make([]ast.Expr, 0),
+	}
+	if p.match(token.RightParen) {
+		return call
+	}
+	for {
+		arg := p.expression()
+		if len(call.Arguments) >= 255 {
+			p.error("function cannot have more than 255 arguments.")
+		}
+		call.Arguments = append(call.Arguments, arg)
+		if !p.match(token.Comma) {
+			break
+		}
+	}
+	p.expect(token.RightParen, "expected  ')' after arguments.")
+	return call
 }
 
 func (p *Parser) primary() (expr ast.Expr) {
@@ -242,6 +364,32 @@ func (p *Parser) primary() (expr ast.Expr) {
 
 	}
 
+	if p.match(token.This) {
+		expr = &ast.ThisExpr{
+			Keyword: p.previous(),
+		}
+	}
+
+	if p.match(token.Super) {
+		tok := p.previous()
+		p.expect(token.Dot, "expected '.' after super")
+		p.expect(token.Identifier, "expected method name of super")
+		method := p.previous()
+		expr = &ast.SuperExpr{
+			Keyword: tok,
+			Method:  method,
+		}
+	}
+
+	if p.match(token.LeftParen) {
+		inner := p.expression()
+		p.expect(token.RightParen, "expected ) after expression.")
+		expr = &ast.GroupingExpr{
+			Expression: inner,
+		}
+
+	}
+
 	if p.match(token.Identifier) {
 		tok := p.previous()
 		expr = &ast.VariableExpr{
@@ -249,14 +397,6 @@ func (p *Parser) primary() (expr ast.Expr) {
 		}
 	}
 
-	if p.match(token.LeftParen) {
-		inner := p.expression()
-		p.expect(token.RightParen, "Expect ) after expression.")
-		expr = &ast.GroupingExpr{
-			Expression: inner,
-		}
-
-	}
 	return expr
 }
 

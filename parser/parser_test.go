@@ -57,6 +57,34 @@ func TestParseLogicExpr(t *testing.T) {
 	checkExpr(t, tests)
 }
 
+func TestParseGetExpr(t *testing.T) {
+	tests := []parserTest{
+		{
+			input:    "x.y",
+			expected: "x.y",
+		},
+		{
+			input:    "x.y.z",
+			expected: "x.y.z",
+		},
+	}
+	checkExpr(t, tests)
+}
+
+func TestParseSetExpr(t *testing.T) {
+	tests := []parserTest{
+		{
+			input:    "x.y = 1",
+			expected: "x.y = 1",
+		},
+		{
+			input:    "x.y.z = 1",
+			expected: "x.y.z = 1",
+		},
+	}
+	checkExpr(t, tests)
+}
+
 func TestParsePrintStatement(t *testing.T) {
 	input := `let a = 0;
 		a = a + 10;
@@ -114,6 +142,44 @@ func TestParseConditionStatement(t *testing.T) {
 	}
 }
 
+func TestParseFunction(t *testing.T) {
+
+	input := `fn t() {
+		        print a;
+		        return a;
+		    }
+		    fn t1(x,y,z) {
+		        print a;
+		        return a;
+		    }
+		    fn t2(x,y,z) {
+		        print a;
+		        return;
+			}
+			t2(1,2,3);`
+
+	body := "print a;return a;"
+	expected := []string{
+		"fn t() " + block(body),
+		"fn t1(x, y, z) " + block(body),
+		"fn t2(x, y, z) " + block("print a;return ;"),
+		"t2(1, 2, 3);",
+	}
+	checkAst(t, input, expected)
+}
+
+func TestParseClass(t *testing.T) {
+	input := `class A {}
+	class B {}
+	class C {}`
+	expected := []string{
+		"class A",
+		"class B",
+		"class C",
+	}
+	checkAst(t, input, expected)
+}
+
 func parseExpression(p *Parser) (expr ast.Expr, err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -132,6 +198,10 @@ func parseExpression(p *Parser) (expr ast.Expr, err error) {
 func newParser(t *testing.T, input string) *Parser {
 	l := lexer.New(input)
 	tokens := l.Lexeme()
+
+	for _, token := range tokens {
+		t.Log(token.Literal, token.Type)
+	}
 
 	return New(tokens)
 }
