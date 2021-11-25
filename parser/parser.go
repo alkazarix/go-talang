@@ -22,11 +22,13 @@ func New(tokens []token.Token) *Parser {
 	return parser
 }
 
-func (p *Parser) Parse() (statements []ast.Stmt, err error) {
+func (p *Parser) Parse() (program ast.Program, err error) {
+
+	statements := []ast.Stmt{}
 	defer func() {
 		if r := recover(); r != nil {
-			if parseErr, ok := r.(parseError); ok {
-				statements = nil
+			if parseErr, ok := r.(ParseError); ok {
+				program = ast.Program{}
 				err = &parseErr
 				p.synchronize()
 			} else {
@@ -38,7 +40,8 @@ func (p *Parser) Parse() (statements []ast.Stmt, err error) {
 		stmt := p.declaration()
 		statements = append(statements, stmt)
 	}
-	return statements, nil
+	program = ast.Program{Statements: statements}
+	return program, nil
 }
 
 func (p *Parser) declaration() ast.Stmt {
@@ -461,5 +464,5 @@ func (p *Parser) synchronize() {
 func (p *Parser) error(msg string) {
 	s := fmt.Sprintf("%s (at line: %d, column: %d)", msg, p.peek().Position.Line, p.peek().Position.Column)
 	fmt.Fprintln(os.Stderr, s)
-	panic(parseError{s})
+	panic(ParseError{s})
 }

@@ -1,9 +1,9 @@
 package parser
 
-type parseError struct {
+type ParseError struct {
 	s string
 }
 
-func (p *parseError) Error() string {
+func (p *ParseError) Error() string {
 	return p.s
 }

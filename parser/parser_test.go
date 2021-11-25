@@ -127,11 +127,12 @@ func TestParseConditionStatement(t *testing.T) {
 	}
 	for i, test := range tests {
 		p := newParser(t, test.input)
-		statements, err := p.Parse()
+		program, err := p.Parse()
 		if err != nil {
 			t.Fatalf("test [%d]: parse failed. error: %s", i, err.Error())
 		}
 
+		statements := program.Statements
 		if len(statements) != 1 {
 			t.Fatalf("test [%d]: should have 1 statement. got %d", i, len(statements))
 		}
@@ -183,7 +184,7 @@ func TestParseClass(t *testing.T) {
 func parseExpression(p *Parser) (expr ast.Expr, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			if parseErr, ok := r.(parseError); ok {
+			if parseErr, ok := r.(ParseError); ok {
 				err = &parseErr
 				expr = nil
 			} else {
@@ -225,10 +226,11 @@ func checkExpr(t *testing.T, tests []parserTest) {
 
 func checkAst(t *testing.T, input string, expected []string) {
 	p := newParser(t, input)
-	statements, err := p.Parse()
+	program, err := p.Parse()
 	if err != nil {
 		t.Fatalf("parse failed. error: %s", err.Error())
 	}
+	statements := program.Statements
 	if len(statements) != len(expected) {
 		t.Fatalf("length of statements should be %d. got %d", len(expected), len(statements))
 	}

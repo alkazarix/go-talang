@@ -22,6 +22,14 @@ type Stmt interface {
 	stmt()
 }
 
+// program
+type Program struct {
+	Statements []Stmt
+}
+
+func (p *Program) node()          {}
+func (p *Program) String() string { return "program" }
+
 // ident
 type Ident struct {
 	Name string
