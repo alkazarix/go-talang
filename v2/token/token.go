@@ -2,16 +2,9 @@ package token
 
 type Type string
 
-type Position {
-	Line int,
-	Column int
-}
-
 type Token struct {
 	Type    Type
 	Literal string
-	Position TokenPosition
-	
 }
 
 const (
