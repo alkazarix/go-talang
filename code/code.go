@@ -16,7 +16,7 @@ type Definition struct {
 }
 
 var definitions = map[Opcode]*Definition{
-	OpNone: {"OpAdd", []int{}},
+	OpNone: {"OpNone", []int{}},
 }
 
 func Lookup(op byte) (*Definition, error) {
