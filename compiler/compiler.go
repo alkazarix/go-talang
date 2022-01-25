@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/alkazarix/talang/ast"
@@ -42,10 +43,90 @@ func (c *Compiler) Compile(node ast.Node) error {
 			}
 		}
 
+	case *ast.GroupingExpr:
+		err := c.Compile(node.Expression)
+		if err != nil {
+			return err
+		}
+
 	case *ast.ExprStmt:
 		err := c.Compile(node.Expression)
 		if err != nil {
 			return err
+		}
+
+	case *ast.LogicalExpr:
+		err := c.Compile(node.Left)
+		if err != nil {
+			return err
+		}
+
+		err = c.Compile(node.Right)
+		if err != nil {
+			return err
+		}
+		switch node.Operator.Literal {
+		case "or":
+			c.emit(code.OpOr)
+		case "and":
+			c.emit(code.OpAnd)
+		default:
+			return compileError(
+				fmt.Sprintf("unknown operator %s", node.Operator.Literal),
+				&node.Operator)
+		}
+
+	case *ast.BinaryExpr:
+		err := c.Compile(node.Left)
+		if err != nil {
+			return err
+		}
+
+		err = c.Compile(node.Right)
+		if err != nil {
+			return err
+		}
+		switch node.Operator.Literal {
+		case "+":
+			c.emit(code.OpAdd)
+		case "*":
+			c.emit(code.OpMul)
+		case "/":
+			c.emit(code.OpDiv)
+		case "-":
+			c.emit(code.OpMinus)
+		case "<":
+			c.emit(code.OpLess)
+		case "<=":
+			c.emit(code.OpLessEqual)
+		case ">":
+			c.emit(code.OpGreater)
+		case ">=":
+			c.emit(code.OpGreaterEqual)
+		case "==":
+			c.emit(code.OpEqual)
+		case "!=":
+			c.emit(code.OpNotEqual)
+		default:
+			return compileError(
+				fmt.Sprintf("unknown operator %s", node.Operator.Literal),
+				&node.Operator)
+		}
+
+	case *ast.UnaryExpr:
+		err := c.Compile(node.Right)
+		if err != nil {
+			return err
+		}
+		switch node.Operator.Literal {
+		case "!":
+			c.emit(code.OpBang)
+		case "-":
+			c.emit(code.OpMinus)
+		default:
+			return compileError(
+				fmt.Sprintf("unknown operator %s", node.Operator.Literal),
+				&node.Operator)
 		}
 
 	case *ast.Literal:

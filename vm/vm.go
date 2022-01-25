@@ -39,9 +39,26 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
+		case code.OpAdd:
+			right := vm.pop()
+			left := vm.pop()
+			leftValue := left.(*valuer.Number).Value
+			rightValue := right.(*valuer.Number).Value
+
+			result := leftValue + rightValue
+			vm.push(&valuer.Number{Value: result})
+
 		}
+
 	}
 	return nil
+}
+
+func (vm *VM) StackTop() valuer.Value {
+	if vm.sp == 0 {
+		return nil
+	}
+	return vm.stack[vm.sp-1]
 }
 
 func (vm *VM) push(v valuer.Value) error {
@@ -53,4 +70,10 @@ func (vm *VM) push(v valuer.Value) error {
 	vm.sp++
 
 	return nil
+}
+
+func (vm *VM) pop() valuer.Value {
+	v := vm.stack[vm.sp-1]
+	vm.sp--
+	return v
 }
