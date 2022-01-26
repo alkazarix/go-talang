@@ -405,16 +405,17 @@ func (vm *VM) popFrame() *Frame {
 
 func (vm *VM) callFunction(numArgs int) error {
 	fn, ok := vm.stack[vm.sp-1-numArgs].(*valuer.CompiledFunction)
+
 	if !ok {
 		return fmt.Errorf("calling non-function")
 	}
 
-	if numArgs != 0 {
+	if numArgs != fn.NumParameters {
 		return fmt.Errorf("wrong number of arguments: want=%d, got=%d",
-			0, numArgs)
+			fn.NumParameters, numArgs)
 	}
 
-	frame := NewFrame(fn, vm.sp)
+	frame := NewFrame(fn, vm.sp-numArgs)
 	vm.pushFrame(frame)
 
 	vm.sp = frame.basePointer + fn.NumLocals

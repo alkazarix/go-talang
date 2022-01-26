@@ -189,6 +189,67 @@ func TestCallingFunctionsWithBindings(t *testing.T) {
 	runVmTests(t, tests)
 }
 
+func TestCallingFunctionsWithArgumentsAndBindings(t *testing.T) {
+	tests := []vmTestCase{
+		{
+			input: `
+		fn identity (a) { a; }
+		identity(4);
+		`,
+			expected: 4,
+		},
+
+		{
+			input: `
+			fn sum(a, b) { a + b; }
+			sum(2, 2);
+			`,
+			expected: 4,
+		},
+		{
+			input: `
+			fn sum(a, b) {
+				let c = a + b;
+				c;
+			}
+			sum(1, 2) + sum(3, 4);`,
+			expected: 10,
+		},
+		{
+			input: `
+			fn sum(a, b) {
+				let c = a + b;
+				c;
+			}
+			fn outer() {
+				sum(1, 2) + sum(3, 4);
+			}
+			outer();
+			`,
+			expected: 10,
+		},
+		{
+			input: `
+			let globalNum = 10;
+
+			fn sum(a, b) {
+				let c = a + b;
+				c + globalNum;
+			}
+
+			fn outer() {
+				sum(1, 2) + sum(3, 4) + globalNum;
+			}
+
+			outer() + globalNum;
+			`,
+			expected: 50,
+		},
+	}
+
+	runVmTests(t, tests)
+}
+
 type vmTestCase struct {
 	input    string
 	expected interface{}

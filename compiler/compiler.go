@@ -299,8 +299,9 @@ func (c *Compiler) Compile(node ast.Node) error {
 		instructions := c.leaveScope()
 
 		compiledFn := &valuer.CompiledFunction{
-			Instructions: instructions,
-			NumLocals:    numLocals,
+			Instructions:  instructions,
+			NumLocals:     numLocals,
+			NumParameters: len(node.Params),
 		}
 
 		c.emit(code.OpConstant, c.addConstant(compiledFn))
@@ -327,7 +328,6 @@ func (c *Compiler) Compile(node ast.Node) error {
 				return err
 			}
 		}
-
 		c.emit(code.OpCall, len(node.Arguments))
 
 	}
