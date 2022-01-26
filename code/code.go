@@ -70,6 +70,8 @@ const (
 	OpNil
 	OpTrue
 	OpFalse
+	OpGetGlobal
+	OpSetGlobal
 )
 
 type Definition struct {
@@ -98,6 +100,8 @@ var definitions = map[Opcode]*Definition{
 	OpNil:           {"OpNil", []int{}},
 	OpTrue:          {"OpTrue", []int{}},
 	OpFalse:         {"OpFalse", []int{}},
+	OpGetGlobal:     {"OpGetGlobal", []int{2}},
+	OpSetGlobal:     {"OpSetGlobal", []int{2}},
 }
 
 func Lookup(op byte) (*Definition, error) {

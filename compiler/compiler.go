@@ -32,6 +32,8 @@ type Compiler struct {
 
 	lastInstruction     EmittedInstruction
 	previousInstruction EmittedInstruction
+
+	symbolTable *SymbolTable
 }
 
 func New() *Compiler {
@@ -40,7 +42,15 @@ func New() *Compiler {
 		constants:           []valuer.Value{},
 		lastInstruction:     EmittedInstruction{},
 		previousInstruction: EmittedInstruction{},
+		symbolTable:         NewSymbolTable(),
 	}
+}
+
+func NewWithState(s *SymbolTable, constants []valuer.Value) *Compiler {
+	compiler := New()
+	compiler.symbolTable = s
+	compiler.constants = constants
+	return compiler
 }
 
 func (c *Compiler) Compile(node ast.Node) error {
@@ -211,6 +221,25 @@ func (c *Compiler) Compile(node ast.Node) error {
 				return err
 			}
 		}
+
+	case *ast.VariableStmt:
+		if node.Initializer != nil {
+			err := c.Compile(node.Initializer)
+			if err != nil {
+				return err
+			}
+		} else {
+			c.emit(code.OpNil)
+		}
+
+		symbol := c.symbolTable.Define(node.Ident.Name)
+		c.emit(code.OpSetGlobal, symbol.Index)
+	case *ast.VariableExpr:
+		symbol, ok := c.symbolTable.Resolve(node.Name)
+		if !ok {
+			return fmt.Errorf("undefined variable %s", node.Name)
+		}
+		c.emit(code.OpGetGlobal, symbol.Index)
 
 	}
 	return nil
