@@ -23,6 +23,10 @@ func (c *Clock) Inspect() string {
 	return "<fn> clock"
 }
 
+func (c *Clock) Val() interface{} {
+	return nil
+}
+
 func (c *Clock) call() {}
 
 func (c *Clock) Arity() int {
@@ -52,6 +56,10 @@ func (at *At) Type() ValueType {
 
 func (at *At) Inspect() string {
 	return "<fn> at"
+}
+
+func (at *At) Val() interface{} {
+	return nil
 }
 
 func (at *At) call() {}
@@ -97,6 +105,10 @@ func (l *Len) Inspect() string {
 	return "<fn> len"
 }
 
+func (l *Len) Val() interface{} {
+	return nil
+}
+
 func (l *Len) call() {}
 
 func (l *Len) Arity() int {
@@ -136,6 +148,10 @@ func (p *Push) Inspect() string {
 	return "<fn> push"
 }
 
+func (p *Push) Val() interface{} {
+	return nil
+}
+
 func (p *Push) call() {}
 
 func (p *Push) Arity() int {
@@ -173,6 +189,10 @@ func (r *Rest) Type() ValueType {
 
 func (r *Rest) Inspect() string {
 	return "<fn> rest"
+}
+
+func (r *Rest) Val() interface{} {
+	return nil
 }
 
 func (r *Rest) call() {}

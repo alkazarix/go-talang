@@ -25,6 +25,7 @@ const (
 type Value interface {
 	Type() ValueType
 	Inspect() string
+	Val() interface{}
 }
 
 type Callable interface {
@@ -45,6 +46,10 @@ func (n *Number) Inspect() string {
 	return fmt.Sprintf("%f", n.Value)
 }
 
+func (n *Number) Val() interface{} {
+	return n.Value
+}
+
 // boolean value
 type Boolean struct {
 	Value bool
@@ -53,11 +58,18 @@ type Boolean struct {
 func (b *Boolean) Type() ValueType { return BooleanType }
 func (b *Boolean) Inspect() string { return fmt.Sprintf("%t", b.Value) }
 
+func (b *Boolean) Val() interface{} {
+	return b.Value
+}
+
 // null value
 type Nil struct{}
 
 func (n *Nil) Type() ValueType { return NilType }
 func (n *Nil) Inspect() string { return "nil" }
+func (n *Nil) Val() interface{} {
+	return nil
+}
 
 // string value
 type String struct {
@@ -66,6 +78,9 @@ type String struct {
 
 func (s *String) Type() ValueType { return StringType }
 func (s *String) Inspect() string { return s.Value }
+func (s *String) Val() interface{} {
+	return s.Value
+}
 
 // return value
 type Return struct {
@@ -74,6 +89,9 @@ type Return struct {
 
 func (r *Return) Type() ValueType { return ReturnType }
 func (r *Return) Inspect() string { return r.Value.Inspect() }
+func (r *Return) Val() interface{} {
+	return r.Value.Val()
+}
 
 // array value
 type Array struct {
@@ -94,6 +112,10 @@ func (a *Array) Inspect() string {
 	sb.WriteString("]")
 
 	return sb.String()
+}
+
+func (a *Array) Val() interface{} {
+	return a.Elements
 }
 
 // function value
@@ -128,6 +150,10 @@ func (fn *Function) Bind(i *Instance) *Function {
 	}
 }
 
+func (fn *Function) Val() interface{} {
+	return nil
+}
+
 type Klass struct {
 	Name    string
 	Methods map[string]*Function
@@ -153,6 +179,10 @@ func (k *Klass) FindMethod(key string) *Function {
 	if method, ok := k.Methods[key]; ok {
 		return method
 	}
+	return nil
+}
+
+func (k *Klass) Val() interface{} {
 	return nil
 }
 
@@ -182,4 +212,8 @@ func (i *Instance) Set(key string, v Value) {
 		i.Fields = make(map[string]Value)
 	}
 	i.Fields[key] = v
+}
+
+func (i *Instance) Val() interface{} {
+	return nil
 }

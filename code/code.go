@@ -53,6 +53,7 @@ const (
 	OpNone Opcode = iota
 	OpConstant
 	OpAdd
+	OpSub
 	OpMinus
 	OpDiv
 	OpMul
@@ -60,8 +61,6 @@ const (
 	OpNotEqual
 	OpOr
 	OpAnd
-	OpLess
-	OpLessEqual
 	OpGreater
 	OpGreaterEqual
 	OpBang
@@ -84,12 +83,11 @@ var definitions = map[Opcode]*Definition{
 	OpNotEqual:     {"OpNotEqual", []int{}},
 	OpOr:           {"OpOr", []int{}},
 	OpAnd:          {"OpAnd", []int{}},
-	OpLess:         {"OpLess", []int{}},
-	OpLessEqual:    {"OpLessEqual", []int{}},
 	OpGreater:      {"OpGreater", []int{}},
 	OpGreaterEqual: {"OpGreaterEqual", []int{}},
 	OpBang:         {"OpBang", []int{}},
 	OpPop:          {"OpPop", []int{}},
+	OpSub:          {"OpSub", []int{}},
 }
 
 func Lookup(op byte) (*Definition, error) {

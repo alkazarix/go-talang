@@ -54,6 +54,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 		if err != nil {
 			return err
 		}
+		c.emit(code.OpPop)
 
 	case *ast.LogicalExpr:
 		err := c.Compile(node.Left)
@@ -77,6 +78,28 @@ func (c *Compiler) Compile(node ast.Node) error {
 		}
 
 	case *ast.BinaryExpr:
+		if node.Operator.Literal == "<" || node.Operator.Literal == "<=" {
+
+			err := c.Compile(node.Right)
+			if err != nil {
+				return err
+			}
+
+			err = c.Compile(node.Left)
+			if err != nil {
+				return err
+			}
+
+			switch node.Operator.Literal {
+			case "<":
+				c.emit(code.OpGreater)
+			case "<=":
+				c.emit(code.OpGreaterEqual)
+			}
+
+			return nil
+
+		}
 		err := c.Compile(node.Left)
 		if err != nil {
 			return err
@@ -94,11 +117,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 		case "/":
 			c.emit(code.OpDiv)
 		case "-":
-			c.emit(code.OpMinus)
-		case "<":
-			c.emit(code.OpLess)
-		case "<=":
-			c.emit(code.OpLessEqual)
+			c.emit(code.OpSub)
 		case ">":
 			c.emit(code.OpGreater)
 		case ">=":

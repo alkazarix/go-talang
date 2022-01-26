@@ -12,10 +12,10 @@ type CompileError struct {
 
 func NewCompileError(reason string, at *token.Token) *CompileError {
 	if at != nil {
-		message := fmt.Sprintf("[runtime error] %s (at line: %d, column: %d)", reason, at.Position.Line, at.Position.Column)
+		message := fmt.Sprintf("[compilation error] %s (at line: %d, column: %d)", reason, at.Position.Line, at.Position.Column)
 		return &CompileError{message: message}
 	}
-	message := fmt.Sprintf("[runtime error] %s", reason)
+	message := fmt.Sprintf("[compilation error] %s", reason)
 	return &CompileError{message: message}
 }
 
