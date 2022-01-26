@@ -120,6 +120,18 @@ func (vm *VM) Run() error {
 				return err
 			}
 
+		case code.OpArray:
+			numElements := int(code.ReadUint16(vm.instructions[ip+1:]))
+			ip += 2
+
+			array := vm.buildArray(vm.sp-numElements, vm.sp)
+			vm.sp = vm.sp - numElements
+
+			err := vm.push(array)
+			if err != nil {
+				return err
+			}
+
 		}
 
 	}
@@ -169,6 +181,10 @@ func (vm *VM) executeBinaryOperation(op code.Opcode) error {
 		return vm.executeLogicalOperation(op, left, right)
 	}
 
+	if leftType == valuer.StringType && rightType == valuer.StringType {
+		return vm.executeBinaryStringOperation(op, left, right)
+	}
+
 	return fmt.Errorf("unsupported types for binary operation: %s %s",
 		leftType, rightType)
 }
@@ -216,6 +232,20 @@ func (vm *VM) executeLogicalOperation(
 		return fmt.Errorf("unknown integer operator: %d", op)
 	}
 	return vm.push(&valuer.Boolean{Value: result})
+}
+
+func (vm *VM) executeBinaryStringOperation(
+	op code.Opcode,
+	left, right valuer.Value,
+) error {
+	if op != code.OpAdd {
+		return fmt.Errorf("unknown string operator: %d", op)
+	}
+
+	leftValue := left.(*valuer.String).Value
+	rightValue := right.(*valuer.String).Value
+
+	return vm.push(&valuer.String{Value: leftValue + rightValue})
 }
 
 func (vm *VM) executeComparison(op code.Opcode) error {
@@ -278,6 +308,16 @@ func (vm *VM) executeMinusOperator() error {
 
 	value := operand.(*valuer.Number).Value
 	return vm.push(&valuer.Number{Value: -value})
+}
+
+func (vm *VM) buildArray(startIndex, endIndex int) valuer.Value {
+	elements := make([]valuer.Value, endIndex-startIndex)
+
+	for i := startIndex; i < endIndex; i++ {
+		elements[i-startIndex] = vm.stack[i]
+	}
+
+	return &valuer.Array{Elements: elements}
 }
 
 func nativeBoolToBooleanObject(input bool) *valuer.Boolean {
