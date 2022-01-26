@@ -5,21 +5,23 @@ import (
 	"strings"
 
 	"github.com/alkazarix/talang/ast"
+	"github.com/alkazarix/talang/code"
 )
 
 type ValueType string
 
 const (
-	NumberType   = "Number"
-	BooleanType  = "Boolean"
-	NilType      = "Nil"
-	StringType   = "String"
-	ArrayType    = "Array"
-	ReturnType   = "Return"
-	KlassType    = "Klass"
-	InstanceType = "Instance"
-	FunctionType = "Function"
-	BuiltinType  = "Builtin"
+	NumberType           = "Number"
+	BooleanType          = "Boolean"
+	NilType              = "Nil"
+	StringType           = "String"
+	ArrayType            = "Array"
+	ReturnType           = "Return"
+	KlassType            = "Klass"
+	InstanceType         = "Instance"
+	FunctionType         = "Function"
+	BuiltinType          = "Builtin"
+	CompiledFunctionType = "CompiledFunction"
 )
 
 type Value interface {
@@ -151,6 +153,21 @@ func (fn *Function) Bind(i *Instance) *Function {
 }
 
 func (fn *Function) Val() interface{} {
+	return nil
+}
+
+//compiled function
+type CompiledFunction struct {
+	Instructions code.Instructions
+}
+
+func (cf *CompiledFunction) Type() ValueType { return CompiledFunctionType }
+
+func (cf *CompiledFunction) Inspect() string {
+	return fmt.Sprintf("compiled function [%p]", cf)
+}
+
+func (cf *CompiledFunction) Val() interface{} {
 	return nil
 }
 

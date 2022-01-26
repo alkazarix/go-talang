@@ -121,6 +121,28 @@ func TestStringExpressions(t *testing.T) {
 	runVmTests(t, tests)
 }
 
+func TestCallingFunctionsWithoutArguments(t *testing.T) {
+	tests := []vmTestCase{
+		{
+			input: `
+			fn fivePlusTen() { 5 + 10; }
+			fivePlusTen();
+			`,
+			expected: 15,
+		},
+		{
+			input: `
+			fn one() { 1; }
+			fn two() { 2; }
+			one() + two();
+			`,
+			expected: 3,
+		},
+	}
+
+	runVmTests(t, tests)
+}
+
 type vmTestCase struct {
 	input    string
 	expected interface{}
