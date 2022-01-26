@@ -12,6 +12,7 @@ const StackSize = 2048
 
 var True = &valuer.Boolean{Value: true}
 var False = &valuer.Boolean{Value: false}
+var Nil = &valuer.Nil{}
 
 type VM struct {
 	instructions code.Instructions
@@ -30,6 +31,7 @@ func New(bytecode *compiler.Bytecode) *VM {
 }
 
 func (vm *VM) Run() error {
+	fmt.Printf(vm.instructions.String())
 	for ip := 0; ip < len(vm.instructions); ip++ {
 		op := code.Opcode(vm.instructions[ip])
 
@@ -44,6 +46,23 @@ func (vm *VM) Run() error {
 			}
 		case code.OpPop:
 			vm.pop()
+
+		case code.OpTrue:
+			err := vm.push(True)
+			if err != nil {
+				return err
+			}
+
+		case code.OpFalse:
+			err := vm.push(False)
+			if err != nil {
+				return err
+			}
+		case code.OpNil:
+			err := vm.push(Nil)
+			if err != nil {
+				return err
+			}
 
 		case code.OpAdd, code.OpSub, code.OpMul, code.OpDiv, code.OpOr, code.OpAnd:
 			err := vm.executeBinaryOperation(op)
@@ -67,6 +86,20 @@ func (vm *VM) Run() error {
 			err := vm.executeMinusOperator()
 			if err != nil {
 				return err
+			}
+
+		case code.OpJump:
+			pos := int(code.ReadUint16(vm.instructions[ip+1:]))
+			ip = pos - 1
+
+		case code.OpJumpNotTruthy:
+			pos := int(code.ReadUint16(vm.instructions[ip+1:]))
+			ip += 2
+
+			condition := vm.pop()
+			if !isTruthy(condition) {
+				fmt.Printf("not truthy")
+				ip = pos - 1
 			}
 
 		}
@@ -208,9 +241,6 @@ func (vm *VM) executeNumberComparison(
 
 func (vm *VM) executeBangOperator() error {
 	operand := vm.pop()
-
-	fmt.Printf("operand %s", operand.Inspect())
-
 	switch operand.Val() {
 	case true:
 		return vm.push(False)
@@ -237,4 +267,18 @@ func nativeBoolToBooleanObject(input bool) *valuer.Boolean {
 		return True
 	}
 	return False
+}
+
+func isTruthy(val valuer.Value) bool {
+	switch val := val.(type) {
+
+	case *valuer.Boolean:
+		return val.Value
+
+	case *valuer.Nil:
+		return false
+
+	default:
+		return true
+	}
 }
