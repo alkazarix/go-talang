@@ -143,6 +143,52 @@ func TestCallingFunctionsWithoutArguments(t *testing.T) {
 	runVmTests(t, tests)
 }
 
+func TestCallingFunctionsWithBindings(t *testing.T) {
+	tests := []vmTestCase{
+		{
+			input: `
+		fn one() { let one = 1; one; }
+		one();
+		`,
+			expected: 1,
+		},
+
+		{
+			input: `
+			fn twoPlusTwo() { let o = 2; let t = 2; o + t; }
+			twoPlusTwo();
+			`,
+			expected: 4,
+		},
+
+		{
+			input: `
+		fn firstFoobar() { let foobar = 50; foobar; }
+		fn secondFoobar() { let foobar = 100; foobar; }
+		firstFoobar() + secondFoobar();
+		`,
+			expected: 150,
+		},
+		{
+			input: `
+		let globalSeed = 50;
+		fn minusOne() {
+			let num = 1;
+			globalSeed - num;
+		}
+		fn minusTwo() {
+			let num = 2;
+			globalSeed - num;
+		}
+		minusOne() + minusTwo();
+		`,
+			expected: 97,
+		},
+	}
+
+	runVmTests(t, tests)
+}
+
 type vmTestCase struct {
 	input    string
 	expected interface{}

@@ -182,6 +182,25 @@ func (vm *VM) Run() error {
 				return err
 			}
 
+		case code.OpSetLocal:
+			localIndex := code.ReadUint8(ins[ip+1:])
+			vm.currentFrame().ip += 1
+
+			frame := vm.currentFrame()
+
+			vm.stack[frame.basePointer+int(localIndex)] = vm.pop()
+
+		case code.OpGetLocal:
+			localIndex := code.ReadUint8(ins[ip+1:])
+			vm.currentFrame().ip += 1
+
+			frame := vm.currentFrame()
+
+			err := vm.push(vm.stack[frame.basePointer+int(localIndex)])
+			if err != nil {
+				return err
+			}
+
 		}
 
 	}
@@ -395,10 +414,10 @@ func (vm *VM) callFunction(numArgs int) error {
 			0, numArgs)
 	}
 
-	frame := NewFrame(fn, vm.sp-numArgs)
+	frame := NewFrame(fn, vm.sp)
 	vm.pushFrame(frame)
 
-	vm.sp = frame.basePointer
+	vm.sp = frame.basePointer + fn.NumLocals
 
 	return nil
 }

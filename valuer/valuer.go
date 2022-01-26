@@ -159,6 +159,7 @@ func (fn *Function) Val() interface{} {
 //compiled function
 type CompiledFunction struct {
 	Instructions code.Instructions
+	NumLocals    int
 }
 
 func (cf *CompiledFunction) Type() ValueType { return CompiledFunctionType }
